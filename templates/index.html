@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Alumnos - Servidor Subsuelo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-content">
+            <div class="header-brand">
+                <span class="brand-icon">🎓</span>
+                <div>
+                    <h1>Portal de Consulta de Alumnos</h1>
+                    <p class="subtitle">Servidor Central | Base de Datos: <strong>{{ base_datos }}</strong> (Tabla: <code>{{ tabla_alumnos }}</code>)</p>
+                </div>
+            </div>
+
+            <!-- Estado de conexion con el servidor MySQL -->
+            <div class="server-badge {% if conexion_ok %}badge-online{% else %}badge-offline{% endif %}">
+                <span class="badge-dot"></span>
+                <span>{% if conexion_ok %}MySQL Conectado{% else %}Error de Conexión{% endif %}</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- Notificaciones y Alertas -->
+        {% if mensaje_error %}
+            <div class="alert alert-danger" role="alert">
+                <span class="alert-icon">⚠️</span>
+                <div>
+                    <strong>Atención:</strong> {{ mensaje_error }}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if mensaje_aviso %}
+            <div class="alert alert-info" role="alert">
+                <span class="alert-icon">ℹ️</span>
+                <div>{{ mensaje_aviso }}</div>
+            </div>
+        {% endif %}
+
+        <!-- Panel de Busqueda -->
+        <section class="search-card">
+            <h2>Búsqueda de Alumnos</h2>
+            <p class="search-help">Busque por cualquier dato personal: Nombre, Apellido, DNI, Legajo, Matrícula o Correo.</p>
+
+            <form action="{{ url_for('ruta_buscar') }}" method="POST" class="search-form">
+                <div class="input-wrapper">
+                    <span class="search-input-icon">🔍</span>
+                    <input 
+                        type="text" 
+                        name="termino" 
+                        id="campo-busqueda"
+                        placeholder="Escriba aquí para buscar..." 
+                        value="{{ termino_busqueda or '' }}" 
+                        required 
+                        autofocus
+                        autocomplete="off"
+                    >
+                </div>
+                <button type="submit" class="btn-primary" id="btn-buscar">
+                    <span>Consultar</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Resultados de la Busqueda -->
+        {% if termino_busqueda %}
+            <section class="results-section">
+                <div class="results-header">
+                    <h3>Resultados de la consulta</h3>
+                    <span class="results-count">
+                        {{ total_resultados or 0 }} registro(s) encontrado(s) para "{{ termino_busqueda }}"
+                    </span>
+                </div>
+
+                {% if alumnos and alumnos|length > 0 %}
+                    <div class="cards-grid">
+                        {% for alumno in alumnos %}
+                            <div class="student-card">
+                                <div class="card-header">
+                                    <span class="student-avatar">👤</span>
+                                    <div class="student-main-info">
+                                        <!-- Muestra el primer campo o nombre destacado -->
+                                        <h4>
+                                            {{ alumno.get('nombre', '') }} {{ alumno.get('apellido', '') }}
+                                            {% if not alumno.get('nombre') and not alumno.get('apellido') %}
+                                                Registro #{{ loop.index }}
+                                            {% endif %}
+                                        </h4>
+                                        <span class="tag-id">
+                                            DNI / ID: {{ alumno.get('dni') or alumno.get('legajo') or alumno.get('id') or alumno.get('matricula') or 'N/D' }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="card-body">
+                                    <div class="info-list">
+                                        {% for clave, valor in alumno.items() %}
+                                            <div class="info-row">
+                                                <span class="info-label">{{ clave|replace('_', ' ')|capitalize }}:</span>
+                                                <span class="info-val">{{ valor if valor is not none else '-' }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <span class="empty-icon">📂</span>
+                        <h4>No se encontraron coincidencias</h4>
+                        <p>No hay alumnos registrados que coincidan con "{{ termino_busqueda }}". Verifique los datos e intente nuevamente.</p>
+                    </div>
+                {% endif %}
+            </section>
+        {% endif %}
+
+    </main>
+
+    <footer class="app-footer">
+        <p>Sistema Flask y Python Nativo | Seguridad en Consultas Parametrizadas | Servidor Subsuelo</p>
+    </footer>
+
+</body>
+</html>
